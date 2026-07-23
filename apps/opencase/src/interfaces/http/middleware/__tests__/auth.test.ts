@@ -62,8 +62,11 @@ describe('makeAuthMiddleware', () => {
 
     it('should call next without token when allowAnonymous is true', async () => {
       middleware = makeAuthMiddleware(mockVerifier as any, { allowAnonymous: true })
-      mockRequest.path = '/tenants/demo/ims/case/v1p1/CFPackages';
-      (mockRequest.header as jest.Mock).mockReturnValue(undefined)
+      Object.defineProperty(mockRequest, 'path', {
+        value: '/tenants/demo/ims/case/v1p1/CFPackages',
+        configurable: true,
+      })
+      ;(mockRequest.header as jest.Mock).mockReturnValue(undefined)
 
       await middleware(mockRequest as Request, mockResponse as Response, mockNext)
 
