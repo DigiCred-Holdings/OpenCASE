@@ -18,6 +18,27 @@ import LoginScreen from '@/ui/auth/LoginScreen'
 import { detectTopology } from '@/ui/editor/layout/detectTopology'
 import { applyInitialLayout } from '@/ui/editor/layout/applyInitialLayout'
 
+/** React Flow canvas is not usable beyond this many nodes/edges (browser OOM). */
+const MAX_CANVAS_GRAPH_SIZE = 400
+
+function assertPackageFitsCanvas(pkg: {
+  CFItems?: unknown[]
+  CFAssociations?: unknown[]
+  CFDocument?: { title?: string }
+}) {
+  const itemCount = Array.isArray(pkg.CFItems) ? pkg.CFItems.length : 0
+  const assocCount = Array.isArray(pkg.CFAssociations) ? pkg.CFAssociations.length : 0
+  if (itemCount <= MAX_CANVAS_GRAPH_SIZE && assocCount <= MAX_CANVAS_GRAPH_SIZE) return
+
+  const title = pkg.CFDocument?.title?.trim() || 'This framework'
+  throw new Error(
+    `${title} is too large for the visual editor ` +
+      `(${itemCount.toLocaleString()} items, ${assocCount.toLocaleString()} associations; ` +
+      `limit ${MAX_CANVAS_GRAPH_SIZE.toLocaleString()}). ` +
+      `It remains available via the CASE API; use the canvas for smaller frameworks.`,
+  )
+}
+
 /** Extract CFDefinitions from a raw CFPackage response and merge into tenant state */
 function extractCfDefinitions(pkg: unknown): {
   CFItemTypes?: CFItemType[]
@@ -286,6 +307,8 @@ function AppInner() {
       try {
         // Fetch the CASE package from the API
         const pkg = await api.getCfPackage({ docId, caseVersion: 'v1p1' })
+        // Large taxonomies (CIP, SCED, crosswalks) OOM the React Flow canvas
+        assertPackageFitsCanvas(pkg)
 
         // Extract CFDefinitions (item types, subjects, concepts, groupings) from the package
         mergeCfDefinitions(pkg)
