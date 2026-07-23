@@ -42,6 +42,13 @@ export interface AppConfig {
 
   // Keycloak realm SSL enforcement ('none' for HTTP dev, 'external' for production HTTPS)
   keycloakRealmSslRequired: 'none' | 'external' | 'all';
+
+  /**
+   * When false, skip Keycloak realm/admin bootstrap on startup (no retries).
+   * Use for CASE-API-only deploys (e.g. Railway) that have no Keycloak sidecar.
+   * Management routes that need JWTs still require an OIDC issuer later.
+   */
+  keycloakBootstrapEnabled: boolean;
 }
 
 export function loadConfig(): AppConfig {
@@ -83,6 +90,11 @@ export function loadConfig(): AppConfig {
     smtpFrom: process.env.SMTP_FROM ?? 'noreply@opencase.local',
 
     keycloakRealmSslRequired: (process.env.KEYCLOAK_SSL_REQUIRED ?? (isProduction ? 'external' : 'none')) as 'none' | 'external' | 'all',
+
+    // Default: attempt bootstrap in non-production (local compose + Keycloak).
+    // Production / PaaS (Railway) usually has no Keycloak sidecar — skip the
+    // ~60s retry loop unless KEYCLOAK_BOOTSTRAP_ENABLED=true is set explicitly.
+    keycloakBootstrapEnabled: (process.env.KEYCLOAK_BOOTSTRAP_ENABLED ?? (isProduction ? 'false' : 'true')) === 'true',
   };
 }
 

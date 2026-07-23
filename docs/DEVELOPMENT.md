@@ -27,13 +27,15 @@ docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
 
 This enables:
-- **Editor**: Vite HMR — edit `apps/editor/src/*` for instant reload
-- **OpenCASE**: ts-node-dev — edit `apps/opencase/src/*` for auto-restart
+- **Editor**: Vite HMR — edit `apps/editor/src/*` for instant reload (bind mounts in base compose)
+- **OpenCASE**: uses `Dockerfile.dev`, which **bakes** `src/` into the image (no source bind mounts). Rebuild after backend changes: `docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build`. For local hot-reload without rebuild, uncomment the optional `src` / `tsconfig` volume lines in `docker-compose.dev.yml`.
 
 First time or after changing dependencies:
 ```bash
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
+
+> **Railway / cloud:** Prefer the production `apps/opencase/Dockerfile` (compiled `node dist/main.js`). Do not rely on host bind mounts — `Dockerfile.dev` now includes source so it can run without mounts, but production is the better deploy target.
 
 ## Production Mode
 

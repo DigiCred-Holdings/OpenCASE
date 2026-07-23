@@ -60,6 +60,32 @@ describe('Config', () => {
       expect(config.keycloakBootstrapSystemAdmin).toBe(false);
     });
 
+    it('should honour KEYCLOAK_BOOTSTRAP_ENABLED=false', () => {
+      process.env.KEYCLOAK_BOOTSTRAP_ENABLED = 'false';
+
+      const config = loadConfig();
+
+      expect(config.keycloakBootstrapEnabled).toBe(false);
+    });
+
+    it('should default KEYCLOAK_BOOTSTRAP_ENABLED to false in production', () => {
+      process.env.NODE_ENV = 'production';
+      delete process.env.KEYCLOAK_BOOTSTRAP_ENABLED;
+
+      const config = loadConfig();
+
+      expect(config.keycloakBootstrapEnabled).toBe(false);
+    });
+
+    it('should default KEYCLOAK_BOOTSTRAP_ENABLED to true in non-production', () => {
+      delete process.env.NODE_ENV;
+      delete process.env.KEYCLOAK_BOOTSTRAP_ENABLED;
+
+      const config = loadConfig();
+
+      expect(config.keycloakBootstrapEnabled).toBe(true);
+    });
+
     it('should load values from environment variables', () => {
       process.env.PORT = '3000';
       process.env.CASE_DATA_DIR = '/custom/data';

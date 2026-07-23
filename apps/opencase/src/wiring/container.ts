@@ -330,25 +330,30 @@ export async function buildContainer(): Promise<Container> {
     smtpFrom: config.smtpFrom,
   })
 
-  // Keycloak bootstrap with retry logic (wait for Keycloak to be ready)
-  const maxRetries = 30
-  const retryDelayMs = 2000
-  let keycloakReady = false
-  
-  for (let attempt = 1; attempt <= maxRetries && !keycloakReady; attempt++) {
-    try {
-      await keycloakAdmin.ensureRealmExists()
-      await keycloakTenantProvisioner.bootstrapSystemAdmin()
-      await keycloakAdmin.setRealmSslRequired(config.keycloakRealm, config.keycloakRealmSslRequired)
-      await keycloakAdmin.setRealmSslRequired(config.keycloakAdminRealm, config.keycloakRealmSslRequired)
-      keycloakReady = true
-      logger.info('Keycloak bootstrap completed successfully')
-    } catch (error: any) {
-      if (attempt < maxRetries) {
-        logger.info({ attempt, maxRetries, error: error?.message }, `Waiting for Keycloak to be ready (attempt ${attempt}/${maxRetries})...`)
-        await new Promise(resolve => setTimeout(resolve, retryDelayMs))
-      } else {
-        logger.warn({ error: error?.message }, 'Keycloak bootstrap failed after max retries (continuing without bootstrap)')
+  // Keycloak bootstrap with retry logic (wait for Keycloak to be ready).
+  // Skipped entirely when KEYCLOAK_BOOTSTRAP_ENABLED=false (CASE-API-only deploys).
+  if (!config.keycloakBootstrapEnabled) {
+    logger.info('KEYCLOAK_BOOTSTRAP_ENABLED=false — skipping Keycloak bootstrap')
+  } else {
+    const maxRetries = 30
+    const retryDelayMs = 2000
+    let keycloakReady = false
+
+    for (let attempt = 1; attempt <= maxRetries && !keycloakReady; attempt++) {
+      try {
+        await keycloakAdmin.ensureRealmExists()
+        await keycloakTenantProvisioner.bootstrapSystemAdmin()
+        await keycloakAdmin.setRealmSslRequired(config.keycloakRealm, config.keycloakRealmSslRequired)
+        await keycloakAdmin.setRealmSslRequired(config.keycloakAdminRealm, config.keycloakRealmSslRequired)
+        keycloakReady = true
+        logger.info('Keycloak bootstrap completed successfully')
+      } catch (error: any) {
+        if (attempt < maxRetries) {
+          logger.info({ attempt, maxRetries, error: error?.message }, `Waiting for Keycloak to be ready (attempt ${attempt}/${maxRetries})...`)
+          await new Promise(resolve => setTimeout(resolve, retryDelayMs))
+        } else {
+          logger.warn({ error: error?.message }, 'Keycloak bootstrap failed after max retries (continuing without bootstrap)')
+        }
       }
     }
   }

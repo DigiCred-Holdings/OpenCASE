@@ -43,6 +43,7 @@ Framework data is stored as versioned files rather than in a traditional databas
 | Guide | Description |
 |-------|-------------|
 | [Developer Guide](docs/DEVELOPER.md) | Technical setup, architecture, API endpoints, and configuration |
+| [Railway (API only)](docs/RAILWAY.md) | Deploy just this CASE server on Railway (no editor/Traefik stack) |
 | [Backend Integration Guide](docs/FRAMEWORK_EDITOR_BACKEND_INTEGRATION.md) | Connecting an editor or external application to the API |
 | [API Endpoint Reference](FRAMEWORK_MANAGEMENT_GUIDE.md) | Complete endpoint reference for building integrations |
 | [Data Model](docs/DataModel.md) | Official CASE v1.1 data model specification |
