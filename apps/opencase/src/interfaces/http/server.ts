@@ -15,7 +15,8 @@ export function createServer (container: Container): express.Express {
     origin: true, // Allow all origins (for development) - restrict in production
     credentials: true, // Allow credentials (cookies, authorization headers)
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+    // Editor sends X-CASE-EDITOR so OpenCASE returns editor extensions
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CASE-EDITOR'],
   }))
 
   app.use(express.json({ limit: '10mb' }))
