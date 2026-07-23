@@ -39,6 +39,26 @@ JWT from an OIDC issuer. Then set `OIDC_ISSUER_URL` (and Keycloak admin vars if
 you use Keycloak for tenant provisioning), and set
 `KEYCLOAK_BOOTSTRAP_ENABLED=true` if that issuer should be bootstrapped on boot.
 
+### No-auth demo (editor + API)
+
+For a throwaway demo **without** Keycloak:
+
+**API (Railway env):**
+```
+ALLOW_ANONYMOUS_MANAGEMENT=true
+```
+
+**Editor build env:**
+```
+VITE_ANONYMOUS_AUTH=true
+VITE_DEFAULT_TENANT_ID=demo
+VITE_OPENCASE_BASE_URL=https://<your-api-host>
+```
+
+The editor skips login and uses tenant `demo`. The API accepts `/management/tenants/demo/...`
+with no Bearer token. **Do not leave this on a public production host** — anyone can
+write frameworks.
+
 ### Health
 
 ```

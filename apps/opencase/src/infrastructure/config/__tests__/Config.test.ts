@@ -86,6 +86,14 @@ describe('Config', () => {
       expect(config.keycloakBootstrapEnabled).toBe(true);
     });
 
+    it('should honour ALLOW_ANONYMOUS_MANAGEMENT=true', () => {
+      process.env.ALLOW_ANONYMOUS_MANAGEMENT = 'true';
+
+      const config = loadConfig();
+
+      expect(config.allowAnonymousManagement).toBe(true);
+    });
+
     it('should load values from environment variables', () => {
       process.env.PORT = '3000';
       process.env.CASE_DATA_DIR = '/custom/data';

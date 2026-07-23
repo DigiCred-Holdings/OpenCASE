@@ -49,6 +49,13 @@ export interface AppConfig {
    * Management routes that need JWTs still require an OIDC issuer later.
    */
   keycloakBootstrapEnabled: boolean;
+
+  /**
+   * When true, /management routes accept requests with no Bearer token and use
+   * the tenantId from the URL path. Demo / no-auth editor mode only — do not
+   * enable on a public production host without other access controls.
+   */
+  allowAnonymousManagement: boolean;
 }
 
 export function loadConfig(): AppConfig {
@@ -95,6 +102,8 @@ export function loadConfig(): AppConfig {
     // Production / PaaS (Railway) usually has no Keycloak sidecar — skip the
     // ~60s retry loop unless KEYCLOAK_BOOTSTRAP_ENABLED=true is set explicitly.
     keycloakBootstrapEnabled: (process.env.KEYCLOAK_BOOTSTRAP_ENABLED ?? (isProduction ? 'false' : 'true')) === 'true',
+
+    allowAnonymousManagement: (process.env.ALLOW_ANONYMOUS_MANAGEMENT ?? 'false') === 'true',
   };
 }
 

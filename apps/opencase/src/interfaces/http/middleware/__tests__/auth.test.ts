@@ -60,6 +60,19 @@ describe('makeAuthMiddleware', () => {
       expect(mockNext).not.toHaveBeenCalled()
     })
 
+    it('should call next without token when allowAnonymous is true', async () => {
+      middleware = makeAuthMiddleware(mockVerifier as any, { allowAnonymous: true })
+      mockRequest.path = '/tenants/demo/ims/case/v1p1/CFPackages';
+      (mockRequest.header as jest.Mock).mockReturnValue(undefined)
+
+      await middleware(mockRequest as Request, mockResponse as Response, mockNext)
+
+      expect(mockNext).toHaveBeenCalled()
+      expect((mockRequest as any).tenantId).toBe('demo')
+      expect((mockRequest as any).anonymousManagement).toBe(true)
+      expect(responseStatus).not.toHaveBeenCalled()
+    })
+
     it('should return 401 when Authorization header does not start with Bearer', async () => {
       (mockRequest.header as jest.Mock).mockReturnValue('Invalid token')
 

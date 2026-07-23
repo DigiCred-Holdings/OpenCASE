@@ -71,9 +71,53 @@ function createUserManager(params: { authority: string; clientId: string; redire
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
+/** No-OIDC mode: pretends authenticated so the editor UI is usable without Keycloak. */
+function AnonymousAuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const cfg = getAppConfig()
-  const [tenantId, setTenantIdState] = useState<string>(() => readTenantId())
+  const [tenantId, setTenantIdState] = useState<string>(() => cfg.defaultTenantId?.trim() || readTenantId())
+
+  const setTenantId = useCallback((nextTenantId: string) => {
+    const trimmed = nextTenantId.trim()
+    if (!trimmed) return
+    writeTenantId(trimmed)
+    setTenantIdState(trimmed)
+  }, [])
+
+  const value: AuthContextValue = useMemo(
+    () => ({
+      status: 'authenticated',
+      tenantId,
+      user: null,
+      userName: 'Anonymous',
+      accessToken: null,
+      error: null,
+      setTenantId,
+      signIn: async (maybeTenantId?: string) => {
+        if (maybeTenantId?.trim()) setTenantId(maybeTenantId)
+      },
+      completeSignIn: async () => {
+        /* no-op */
+      },
+      signOut: async () => {
+        try {
+          globalThis.localStorage?.clear()
+        } catch {
+          /* ignore */
+        }
+        globalThis.history?.replaceState(null, '', '/#/')
+      },
+      getAccessToken: async () => null,
+      changePassword: null,
+    }),
+    [tenantId, setTenantId],
+  )
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+function OidcAuthProvider({ children }: Readonly<{ children: ReactNode }>) {
+  const cfg = getAppConfig()
+  const [tenantId, setTenantIdState] = useState<string>(() => cfg.defaultTenantId?.trim() || readTenantId())
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [user, setUser] = useState<User | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -245,9 +289,16 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
+  const cfg = getAppConfig()
+  if (cfg.anonymousAuth) {
+    return <AnonymousAuthProvider>{children}</AnonymousAuthProvider>
+  }
+  return <OidcAuthProvider>{children}</OidcAuthProvider>
+}
+
 export function useAuth() {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used within an AuthProvider')
   return ctx
 }
-

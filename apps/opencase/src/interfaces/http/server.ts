@@ -42,8 +42,10 @@ export function createServer (container: Container): express.Express {
   const optionalAuthMiddleware = makeOptionalAuthMiddleware(container.jwtVerifier)
   app.use('/ims/case', optionalAuthMiddleware)
 
-  // Management API — strict auth required
-  const authMiddleware = makeAuthMiddleware(container.jwtVerifier)
+  // Management API — JWT required unless ALLOW_ANONYMOUS_MANAGEMENT=true
+  const authMiddleware = makeAuthMiddleware(container.jwtVerifier, {
+    allowAnonymous: container.config.allowAnonymousManagement
+  })
   app.use('/management', authMiddleware)
 
   registerV1p1Routes(app, {

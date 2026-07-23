@@ -4,11 +4,25 @@ import { OidcJwtVerifier } from '../../../infrastructure/auth/OidcJwtVerifier'
 /**
  * Strict auth middleware — rejects requests without a valid Bearer JWT.
  * Used for management API routes.
+ *
+ * When `allowAnonymous` is true, missing/invalid Authorization is allowed and
+ * the request continues without a JWT tenant (controllers use URL tenantId).
  */
-export function makeAuthMiddleware (verifier: OidcJwtVerifier) {
+export function makeAuthMiddleware (verifier: OidcJwtVerifier, opts?: { allowAnonymous?: boolean }) {
+  const allowAnonymous = opts?.allowAnonymous === true
   return async (req: Request, res: Response, next: NextFunction) => {
     const header = req.header('authorization')
     if (!header || !header.startsWith('Bearer ')) {
+      if (allowAnonymous) {
+        ;(req as any).isAuthenticated = false
+        ;(req as any).anonymousManagement = true
+        // Mounted at /management → path is /tenants/:tenantId/...
+        const match = /^\/tenants\/([^/]+)/.exec(req.path)
+        if (match?.[1]) {
+          ;(req as any).tenantId = decodeURIComponent(match[1])
+        }
+        return next()
+      }
       return res.status(401).json({ error: 'Missing or invalid Authorization header' })
     }
 
@@ -25,6 +39,15 @@ export function makeAuthMiddleware (verifier: OidcJwtVerifier) {
       ;(req as any).isAuthenticated = true
       return next()
     } catch (err: any) {
+      if (allowAnonymous) {
+        ;(req as any).isAuthenticated = false
+        ;(req as any).anonymousManagement = true
+        const match = /^\/tenants\/([^/]+)/.exec(req.path)
+        if (match?.[1]) {
+          ;(req as any).tenantId = decodeURIComponent(match[1])
+        }
+        return next()
+      }
       return res.status(401).json({ error: 'Invalid token', message: err?.message })
     }
   }
